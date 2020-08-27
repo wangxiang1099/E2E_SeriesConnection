@@ -1,0 +1,59 @@
+
+## run_args
+# path
+root_dir : "/home/wx/project/now_project/iocr_trainning"
+data_dir:  "/home/wx/data/iocr_training/ocr/"
+pretrain_model_path: ""
+result_dir: "/home/wx/dump_results/iocr_training"
+
+load_pretrain_model: True
+device: "0"  # 暂时没用
+expeiment_name: "merge"
+
+# dataset
+imgH: 32
+
+# sub model descript
+S1: DB
+S2: CRNN
+alphabet: "VAT"
+nc: 1
+
+# dependency
+S1: [None]
+S2: [S1]
+
+# share conv
+SHARE_CONV: Resnet50
+FPN: True
+
+# connector
+CONNECTOR: SimpleROI
+
+# Training Strategy
+#############################
+epochs : 600
+eval_epoch : 2
+train_batch_size : 2
+tran_loader_workers: 1
+log_print_freq : 10
+i_batch_save_freq: 5000
+save_epoch: 2
+
+# optimizer
+lr: 0.0007
+momentum: 0.9
+weight_decay: 0.0001
+
+# scheculer
+step_size: 3
+gamma: 0.1
+
+## val_args
+val_batch_size : 1
+
+# add features
+
+
+# eval_vis_config
+vis_batch_size : 1
