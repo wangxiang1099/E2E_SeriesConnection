@@ -1,7 +1,6 @@
+from modelZoo.connector import *
 
-from modelZoo.model import *
-
-class ModelFinder():
+class ConnectFinder():
 
     def __init__(self):
         pass
@@ -12,10 +11,10 @@ class ModelFinder():
         if build_config is None:
             build_config = {}
 
-        if model_name == "DB":
+        if model_name == "simple_roi":
             model = DB(build_params)
 
-        if model_name == "CRNN":
+        if model_name == "roi":
             model = CRNN(build_params)
         
         self.test_model(model.test_data, model)
@@ -25,4 +24,3 @@ class ModelFinder():
     def test_model(self, test_data, model):
         
         pass
-        

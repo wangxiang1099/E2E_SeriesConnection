@@ -342,9 +342,6 @@ def resnet152(pretrained=True, **kwargs):
     return model
 
 
-
-
-
 if __name__ == "__main__":
 
     net = resnet50()

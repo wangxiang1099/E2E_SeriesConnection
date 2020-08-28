@@ -1,20 +1,14 @@
-
 import torch
 import torch.nn as nn
-import sys
-sys.path.append("../")
 
-from ..basenet.resnet import resnet50,resnet18
-from torch.autograd import Variable
+class FPN(nn.Module):
 
-class ShareConv(nn.Module):
-
-    def __init__(self,in_channels=[256, 512, 1024, 2048],
+    def __init__(self, backbone, in_channels=[256, 512, 1024, 2048],
                  inner_channels=256,bias=False):
 
-        super(ShareConv, self).__init__()
+        super(FPN, self).__init__()
 
-        self.backbone = resnet50()
+        self.backbone = backbone
         self.up5 = nn.Upsample(scale_factor=2, mode='nearest')
         self.up4 = nn.Upsample(scale_factor=2, mode='nearest')
         self.up3 = nn.Upsample(scale_factor=2, mode='nearest')
