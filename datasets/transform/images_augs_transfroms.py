@@ -1,3 +1,34 @@
+import numpy as np 
+import cv2
+from torchvision.transforms import functional as F
+
+class Compose(object):
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, image):
+        for t in self.transforms:
+            image = t(image)
+        return image
+
+class ToTensor(object):
+    def __call__(self, image):
+
+        image = F.to_tensor(image)
+        return image
+
+class Normalize(object):
+    def __call__(self, image):
+        image = F.normalize(image,[0.5,0.5,0.5],[0.5,0.5,0.5])
+        return image
+
+def get_image_encoding_transforms():
+
+    transforms = []
+    transforms.append(ToTensor())
+    transforms.append(Normalize())
+    return Compose(transforms)
+
 import cv2
 import numpy as np
 from torchvision.transforms import functional as F
@@ -155,3 +186,19 @@ def random_rotate(imgs):
         random_transforms = random_horizontal_flip(random_transforms)
         random_transforms = random_rotate(random_transforms)
 """
+
+
+if  __name__ == "__main__":
+
+    import sys 
+    sys.path.append("/home/wx/project/now_project/iocr_trainning")
+    
+    from datasets.invoices.synthesisInvoices import SynthesisInvoices
+
+    dataset = SynthesisInvoices(
+        root= "/home/wx/data/iocr_training/recognition_data", splits = ["rec1_train","rec2_train"], 
+        transforms=get_transforms_recognition(),
+    )
+    print(dataset[2][1])
+
+    from datasets.ocr.invoices.synthesisInvoices import SynthesisInvoices

@@ -16,10 +16,8 @@ class E2EModel(nn.Module):
         self.share_conv = shareConv
         self.S1model_branch = modelS1
         self.S2model_branch = modelS2
-
         self.connector = connector
-        
-        super(E2EModel, self).__init__()
+
 
     def forward(self, x_batch, s1_target=None, s2_target=None):
         
@@ -30,22 +28,23 @@ class E2EModel(nn.Module):
         else:  
             s1_res = self.S1model_branch(conv_maps)
 
+        boxes_batch = s1_target['boxes_batch']
+
         if not self.training:
             if not self._inference_using_bounding_box:
                 boxes_batch = s1_res['boxes_batch']
-            else:
-                boxes_batch = s1_target['boxes_batch']
         
         # 把 conv_layer 或 原图 进行roi 裁剪 得到一个batch 送给识别
         conv_maps_transforms, batch_sizes = self.connector(conv_maps, boxes_batch)
-
         if self.training:
             s2_res, s2_loss = self.S2model_branch(conv_maps_transforms, s2_target)
+
+            return s1_loss, s2_loss
         else:  
             s2_res = self.S2model_branch(conv_maps_transforms)
             s2_res = self._unsqueeze_batches(s2_res, batch_sizes)
 
-        return s1_res, s2_res, s1_loss, s2_loss
+            return s1_res, s2_res
 
     # 送出的batches 要恢复原状
     def _unsqueeze_batches(self, list_batches, batch_sizes):

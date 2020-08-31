@@ -96,6 +96,7 @@ if __name__ == '__main__':
     synthtextloader = Synth80k('/home/wx/data/iocr_training/Syn800k/SynthText',image_augs=image_augs(),
                                 preprocess_detect_label = prepocess_detect_label(),
                                 transforms=get_transforms_detect())
+                                
     image_name, image, detect_target, word_bboxes, txt_target = synthtextloader[0]
 
     print(word_bboxes[0])

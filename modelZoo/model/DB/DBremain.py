@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from torch.autograd import Variable
 
 import torch
 import torch.nn as nn

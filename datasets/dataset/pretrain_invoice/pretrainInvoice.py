@@ -12,15 +12,20 @@ import torch
 class pretrainInvoiceDataset(Dataset):
     
     # 基类
-    def __init__(self, root, split="data_full", transforms=None):
+    def __init__(self, root, split="data_full", image_augs=None, s1_targets_preprocess=None,
+                                                s2_targets_preprocess=None,
+                                                image_encoding_transforms = None):
         
         self.root = root
-        self.transforms = transforms
 
         self.data = []
         data_path = os.path.join(root, split+".txt")
         self.data += self.read_path(data_path)  
-        self.transforms = transforms
+
+        self.image_augs = image_augs
+        self.s1_targets_preprocess = s1_targets_preprocess
+        self.s2_targets_preprocess = s2_targets_preprocess
+        self.image_encoding_transforms = image_encoding_transforms
                 
     def read_path(self, data_path):
         # read data path
@@ -43,6 +48,7 @@ class pretrainInvoiceDataset(Dataset):
     
     def read_label(self,label_path):
         
+        label_res = {"boxes":None,"texts":None}
         with open(label_path, 'r', encoding='utf-8') as f:
 
             loc_ret = []
@@ -57,75 +63,68 @@ class pretrainInvoiceDataset(Dataset):
                 txt_label = line[1]
 
                 loc_label = tuple(map(int,loc_label.split(",")))
+
+                x1, y1, x2, y2 = loc_label[0],loc_label[1],loc_label[2],loc_label[3]
+
+                loc_label = ((x1, y1), 
+                             (x1, y2),
+                             (x2, y2),
+                             (x2, y1))
                 
                 loc_ret.append(loc_label)
                 txt_ret.append(txt_label)
 
-        return loc_ret, txt_ret
+            label_res['boxes'] = np.array(loc_ret, dtype=np.float64)
+            label_res['texts'] = txt_ret
 
-    def preprocess(self, image, boxes):
-        
-        shrink_ratio = 0.4
-        ret = {}
-        h,w, _ = image.shape
-        gt = np.zeros((1, h, w), dtype=np.float32)
-
-        for box in boxes:
-            
-            x1,y1, x2,y2 = box
-
-            area = int(x2-x1)*int(y2-y1)
-            longth = 2*int(x2-x1) + 2*int(y2-y1)
-
-            distance = area * \
-                    (1 - np.power(shrink_ratio, 2)) / longth
-            
-            
-            shrinked_x1 = x1 + distance/2
-            shrinked_y1 = y1 + distance/2
-            shrinked_x2 = x2 - distance/2
-            shrinked_y2 = y2 - distance/2
-            
-            #shrinked_x1 = x1
-            #shrinked_y1 = y1
-            #shrinked_x2 = x2
-            #shrinked_y2 = y2
-
-            shrinked = np.array(((shrinked_x1,shrinked_y1),(shrinked_x2,shrinked_y1),
-                        (shrinked_x2,shrinked_y2),(shrinked_x1,shrinked_y2)))
-
-            cv2.fillPoly(gt[0,:,:], [shrinked.astype(np.int32)], 1)
-
-        ret['gt'] = torch.FloatTensor(gt)
-        ret['image_vis'] = image.copy()
-            
-        return ret
+        return label_res
 
     def __len__(self):
         return len(self.data)
     
-    def __getitem__(self, idx, vis =True):
+    def __getitem__(self, idx, vis =False):
 
         data_idx = self.data[idx]
+
         image_path = data_idx['image_path']
         label_path = data_idx['label_path']
 
         image = cv2.imread(image_path)
         image_dir, image_name = os.path.split(os.path.splitext(image_path)[0])
 
-        boxes, txt_target = self.read_label(label_path)
-        detect_target = self.preprocess(image,boxes)
+        targets = self.read_label(label_path)
 
-        if self.transforms is not None:
-            image, _ = self.transforms(image, None)
+        # 处理images 和labels 特征 
+        if self.image_augs is not None:
+            image, targets = self.image_augs(image, targets)
+        
+        s1_targets = {"boxes": targets['boxes']}
+        s2_targets = {"texts": targets['texts']}
+
+        if self.s1_targets_preprocess is not None:
+            _, s1_targets = self.s1_targets_preprocess(image, s1_targets)
+
+        if self.s2_targets_preprocess is not None:
+            _, s2_targets = self.s2_targets_preprocess(image, s2_targets)
+
+        if self.image_encoding_transforms is not None:
+            image = self.image_encoding_transforms(image)            
 
         if vis:
-            cv2.imwrite("/home/wx/tmp_pic/gt_syn.jpg", detect_target['gt'].permute(1,2,0).numpy()*255)
             cv2.imwrite("/home/wx/tmp_pic/image_syn.jpg", image.permute(1,2,0).numpy()*255)
-            
-        return image_name, image, detect_target, boxes, txt_target
+
+        return image_name, image, s1_targets, s2_targets
 
 if __name__ == '__main__':
-    from transform import get_transforms_recognition
-    dataset = pretrainInvoiceDataset(root='/home/wx/data/iocr_training/syn6000invoice',transforms=get_transforms_recognition())
+
+    import sys
+    sys.path.append("/home/wx/project/E2E_SeriesConnection")
+    from datasets.transform import *
+    
+    dataset = pretrainInvoiceDataset(root='/home/wx/data/iocr_training/syn6000invoice',
+        s1_targets_preprocess = prepocess_detect_label(),
+        s2_targets_preprocess = None,
+        image_encoding_transforms = get_image_encoding_transforms()
+        )
+    
     print(dataset[0])  

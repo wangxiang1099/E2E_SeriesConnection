@@ -1,23 +1,53 @@
 from modelComponent import *
-from datasets import *
-from evalVis import *
 from trainner import *
+import os 
+from easydict import EasyDict
+import yaml
 
-class E2EModelBuild:
+class RUN:
 
-    def __init__(self, taskConfig):
+    def __init__(self, taskConfigPath):
         
-        self.taskConfig = None
+        self.config = self.setup(taskConfigPath)
+
+    def setup(self, yaml_path):
+
+        """
+        Create configs and perform basic setups.
+        """
+        #params = EasyDict()
+        yaml_file = open(yaml_path)
         
+        cfg = yaml_file.read()
+        params = yaml.safe_load(cfg)
+        params = EasyDict(params)
+
+        pretrain_save_path = os.path.join(params.PATH.result_dir, params.PATH.expeiment_name,'pretrain')
+        result_path = os.path.join(params.PATH.result_dir, params.PATH.expeiment_name,'result')
+        process_path = os.path.join(params.PATH.result_dir, params.PATH.expeiment_name,'process_path')
+
+        if not os.path.exists(pretrain_save_path):
+            os.makedirs(pretrain_save_path)
+
+        params['pretrain_save_path'] = pretrain_save_path
+
+        if not os.path.exists(result_path):
+            os.makedirs(result_path)
+        params['result_path'] = result_path
+        
+        if not os.path.exists(process_path):
+            os.makedirs(process_path)
+        params['process_path'] = process_path
+        
+        return params
+
     # build model
-    def buildModel(self, config):
+    def buildModel(self):
         
-        S1 = "DB"
-        S2 = "CRNN"
 
         modelFinder = ModelFinder()
-        modelS1 = modelFinder(S1, config.S1)
-        modelS2 = modelFinder(S2, config.S2)
+        modelS1 = modelFinder(self.config.S1)
+        modelS2 = modelFinder(self.config.S2)
 
         # 模型裁剪 
         modelS1 = modelClipper(modelS1)
@@ -25,31 +55,20 @@ class E2EModelBuild:
 
         # 共享卷积
         shareConvFinder = ShareConvFinder()
-        shareConv = shareConvFinder("resnet18_fpn", config.shareConv)
+        shareConv = shareConvFinder(self.config.ShareConv)
 
         # 连接器配置 
         connectFinder = ConnectFinder()
-        connector = connectFinder("simple_roi", config.connect)
+        connector = connectFinder(self.config.Connect)
         # loss配置 
         expandS2 = ExpandS2()
 
-        self.E2Emodel = E2EModel(config.E2E, shareConv, modelS1, modelS2, connector, expandS2)
+        self.E2Emodel = E2EModel(self.config.E2E, shareConv, modelS1, modelS2, connector, expandS2)
     
-    def buildDataset(self, config):
-        self.dataset = MergeDataset(config.dataset)
+    def training_exp(self):
 
-    def buildEvalVis(self, config):
-        self.evalVis = EvalVis(config.evalVis)
-
-    def buildTrainer(self, config):
-
-        # 优化器、训练配置 
-        self.trainer = Trainer(config.train, self.E2Emodel, self.dataset, self.evalVis)
-        # 子任务数据拓展
-        # 假数据测试
-        self._test_train()
-        return # model class
-
+        train_main(self.config.Train, self.config.Dataset, self.config.EvalVis, self.config, self.E2Emodel)
+    
     # test train
     def _test_train(self):
         return True
@@ -72,14 +91,10 @@ class E2EModelBuild:
 if __name__ == "__main__":
     # 读配置 传参
     
-    taskConfig = None
-    e2e = E2EModelBuild(taskConfig)
-    e2e.buildModel()
-    e2e.buildDataset()
-    e2e.buildEvalVis()
-    e2e.buildTrainer()
-    e2e.train()
-
+    taskConfig = "/home/wx/project/E2E_SeriesConnection/TaskConfig.yaml"
+    o = RUN(taskConfig)
+    o.buildModel()
+    o.training_exp()
     print("OKOK!!!")
 
     

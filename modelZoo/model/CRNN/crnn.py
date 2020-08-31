@@ -1,71 +1,61 @@
 
 from ..baseModel import BaseModel
-
+from ...convLayer import *
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
+from .crnnRemain import CRNN_remain
+
 
 from .represent import strLabelConverter
 
 class CRNN(BaseModel):
 
     def __init__(self, cfg):
-        super(CRNN, self).__init__()
         self.cfg = cfg
+        super(CRNN, self).__init__()
 
     def build_represent(self):
-        self.represent = strLabelConverter(self.cfg.wordTable.name)
+        return strLabelConverter(self.cfg.alphabet)
 
     def build_loss(self):
-        self.loss = torch.nn.CTCLoss(reduction='sum')
+        return torch.nn.CTCLoss(reduction='sum')
     
     def build_CNN(self):
-
-        pass
+        
+        return FPN(resnet50())
 
     def build_remain(self):
         
-        from .crnnRemain import CRNN
-        self.remain = CRNN
+        return CRNN_remain(imgH=8, nc=256, nclass = len(self.represent))
 
     def build_test_data(self):
-        pass
-
-    def forward_network(self, x):
-
-        #print('---forward propagation---')
-        conv = self.cnn(x)
-        b, c, h, w = conv.size()
-        assert h == 1, "the height of conv must be 1"
-        conv = conv.squeeze(2) # b *512 * width
-        conv = conv.permute(2, 0, 1)  # [w, b, c]
-        output = F.log_softmax(self.rnn(conv), dim=2)
-        return output
+        
+        return torch.FloatTensor((10,3,32,320))
 
     def forward_represent(self, res):
-
+        
         batch_size = res.shape[1]
         _, preds = res.max(2)
         preds_size = torch.IntTensor([preds.size(0)] * batch_size)
         preds = preds.transpose(1, 0).contiguous().view(-1)
-        text_preds = self.strLabelConverter.decode(preds.data, preds_size.data, raw=False)
+
+        text_preds = self.represent.decode(preds.data, preds_size.data, raw=False)
         return text_preds
 
     def forward_loss(self, preds, targets):
 
-        batch_size = preds.size()[0]
+        batch_size = preds.shape[1]
 
         target_texts = []
         #if len(targets['texts']) != batch_size:
         for item in targets['texts']:
-            target_texts += item
+            target_texts += item['texts']
         #else:
         #    target_texts = targets['texts']
-
         assert len(target_texts) == batch_size
 
-        texts, length = self.strLabelConverter.encode(target_texts)
+        texts, length = self.represent.encode(target_texts)
         preds_size = torch.IntTensor([preds.size(0)]*batch_size)
-
         recog_loss = self.loss(preds, texts, preds_size, length)/batch_size
         return recog_loss

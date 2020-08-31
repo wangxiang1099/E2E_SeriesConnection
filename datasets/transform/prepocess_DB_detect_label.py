@@ -130,8 +130,9 @@ class MakeSegDetectorData(object):
         #self.min_text_size = 8
         self.shrink_ratio = 0.4
 
-    def __call__(self, image, quad_boxes, vis=False):
+    def __call__(self, image, targets, vis=False):
         
+        quad_boxes = targets['boxes']
         image_vis = image.copy()
         h, w = image.shape[0:2]
         gt = np.zeros((h, w, 1), dtype=np.float32)
@@ -145,8 +146,9 @@ class MakeSegDetectorData(object):
         canvas , mask = mm(image_vis, polygons_all)
 
         for i, box in enumerate(quad_boxes):
-            
+
             polygon_shape = Polygon(polygons_all[i])
+
             distance = polygon_shape.area * \
                     (1 - np.power(self.shrink_ratio, 2)) / polygon_shape.length
             subject = [tuple(l) for l in polygons_all[i]]
@@ -168,9 +170,11 @@ class MakeSegDetectorData(object):
         target = {}
 
         target.update(image_vis=image.copy(),
+                      boxes=targets['boxes'],
                       detect_gt=torch.FloatTensor(gt).permute(2,0,1),
                       detect_gt_border=torch.FloatTensor(canvas).unsqueeze(0), 
                       detect_border_mask=torch.FloatTensor(mask).unsqueeze(0))
+                      
         return image, target
 
 

@@ -66,11 +66,11 @@ class QuadROI(nn.Module):
         shrink_ratio = self.shrink_ratio
         rec_x = []
         batch_sizes = []
-
         for i, img_quad_boxes in enumerate(boxes_batch):
 
             x = x_batch[i]
             batch_sizes.append(len(img_quad_boxes))
+
             img_quad_boxes *= shrink_ratio
             rec_x += self.roi(x, img_quad_boxes)
 

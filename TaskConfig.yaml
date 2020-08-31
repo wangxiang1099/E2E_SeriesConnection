@@ -4,8 +4,7 @@ PATH:
   data_dir:  "/home/wx/data/iocr_training/ocr/"
   pretrain_model_path: ""
   result_dir: "/home/wx/dump_results/iocr_training"
-  expeiment_name: "merge"
-
+  expeiment_name: "merge_08_31"
 S1:
   name: DB
 S2:
@@ -14,38 +13,41 @@ S2:
   imgH: 32 
 
 ShareConv:
-  name: Resnet50
+  name: resnet50_fpn
   FPN: True
 
 Connect:
-  name: SimpleROI
+  name: QuadROI
 
 E2E:
   params:
 
 Dataset:
   name: pretrain_invoice
+  root: /home/wx/data/iocr_training/syn6000invoice
+  split: data_full
+  train_batch_size : 2
+  val_batch_size: 1
+  resize_h: 1024
+  resize_w: 2048
+  val_size: 1000
 
 EvalVis:
-  vis_batch_size : 1
+  metric_items: ['val_acc','train_acc','train_mean_iou','val_mean_iou']
 
-Trainer:
+Train:
 
   device: 0  
-  load_pretrain_model: True
+  load_pretrain_model: False
   epochs : 600
   eval_epoch : 2
-  train_batch_size : 2
-  tran_loader_workers: 1
   log_print_freq : 10
-  val_batch_size : 1
+  i_batch_eval_freq: 5000
 
   optimizer: 
-    name: SGD
-    # optimizer
-    lr: 0.0007
-    momentum: 0.9
-    weight_decay: 0.0001
+    name: Adam
+    lr: 0.00005
+    beta1: 0.5
 
   scheculer:
     step_size: 3

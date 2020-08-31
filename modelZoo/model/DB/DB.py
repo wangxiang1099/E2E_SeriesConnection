@@ -1,36 +1,53 @@
 
 from ..baseModel import BaseModel
+from ...convLayer import *
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class DB(nn.Module):
+from .loss import DetectLoss
+from .represent import SegDetectorRepresenter
 
-    def __init__(self):
+class DB(BaseModel):
 
-        self.build_network()
-        self.represent = self.build_represent()
-        self.loss = self.build_loss()
-        self.test_data = self.build_test_data()
+    def __init__(self,cfg):
+
+        self.cfg = cfg
+        super(DB, self).__init__()
     
     def build_represent(self):
-        raise NotImplementedError
+
+        represent = SegDetectorRepresenter()
+        return represent
 
     def build_loss(self):
-        raise NotImplementedError
+        
+        detect_loss = DetectLoss()
+        return detect_loss
     
     def build_CNN(self):
-        self.cnn = FPN(resnet18(), in_channels=[64,128,256,512])
+
+        return FPN(resnet50())
 
     def build_remain(self):
+
         from .DBremain import DBSegDetector
-        self.remain = DBSegDetector()
+        return DBSegDetector()
 
     def build_test_data(self):
-        raise NotImplementedError
+        return torch.FloatTensor((10,3,1024,2048))
 
     def forward_represent(self, res):
-        raise NotImplementedError
+
+        segmentation, boxes_batch, scores_batch = self.represent.represent(res['binary'], (1<<10, 1<<11))
+
+        res.update(segmentation=segmentation, boxes_batch=boxes_batch,
+                   scores_batch=scores_batch)
+        
+        return res
 
     def forward_loss(self, res, target):
-        raise NotImplementedError
+
+        loss = self.loss(res, target)
+        return loss

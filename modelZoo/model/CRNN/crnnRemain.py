@@ -21,10 +21,10 @@ class BidirectionalLSTM(nn.Module):
 
         return output
 
-class CRNN(nn.Module):
+class CRNN_remain(nn.Module):
     #                   32    1   37     256
     def __init__(self, imgH=32, nc=1, nclass=11, n_rnn=2, leakyRelu=False):
-        super(CRNN, self).__init__()
+        super(CRNN_remain, self).__init__()
         assert imgH % 8 == 0, 'imgH has to be a multiple of 8'
 
         ks = [3, 3, 3, 3, 3, 3]

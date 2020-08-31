@@ -5,19 +5,21 @@ class ConnectFinder():
     def __init__(self):
         pass
 
-    def __call__(self, model_name, build_params):
+    def __call__(self, build_params):
 
         # 工厂函数
-        if build_config is None:
-            build_config = {}
+        if build_params is None:
+            build_params = {}
 
-        if model_name == "simple_roi":
-            model = DB(build_params)
+        if build_params['name'] == "SimpleROI":
 
-        if model_name == "roi":
-            model = CRNN(build_params)
+            model = SimpleROI()
         
-        self.test_model(model.test_data, model)
+        if build_params['name'] == "QuadROI":
+
+            model = QuadROI(shrink_ratio=0.25,out_height=32, max_ratio=12, channels=256)
+ 
+        #self.test_model(model.test_data, model)
 
         return model
 

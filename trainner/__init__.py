@@ -1,1 +1,1 @@
-from .trainer import Trainer
+from .train_script import main as train_main

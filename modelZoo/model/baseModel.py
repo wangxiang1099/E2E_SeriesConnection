@@ -5,8 +5,10 @@ class BaseModel(nn.Module):
 
     def __init__(self):
 
-        self.build_network()
+        super(BaseModel, self).__init__()
+        
         self.represent = self.build_represent()
+        self.build_network()
         self.loss = self.build_loss()
         self.test_data = self.build_test_data()
     
@@ -42,7 +44,7 @@ class BaseModel(nn.Module):
     def forward_loss(self, res, target):
         raise NotImplementedError
 
-    def forward(self, x, target):
+    def forward(self, x, target= None):
 
         loss = 0
         res = "None"
@@ -50,8 +52,10 @@ class BaseModel(nn.Module):
         
         if self.training:
             loss = self.forward_loss(res, target)
+            return res, loss
+
     
         if not self.training:
             res = self.forward_represent(res)
+            return res
 
-        return res, loss
