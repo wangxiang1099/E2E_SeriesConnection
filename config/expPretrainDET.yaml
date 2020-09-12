@@ -1,0 +1,42 @@
+## run_args
+# path
+root_dir : "/home/wx/project/now_project/iocr_trainning"
+data_dir:  "/home/wx/data/iocr_training/ocr/"
+pretrain_model_path: "/home/wx/dump_results/iocr_training/07_29_pretrain_true/pretrain/12_done.pth"
+load_pretrain_model: False
+
+result_dir: "/home/wx/dump_results/iocr_training"
+dataset_root: '/home/wx/data/iocr_training/syn6000invoice'
+# 
+device: 1
+expeiment_name: "expPretrainDET"
+
+# loss
+detect_loss_weight: 1
+rec_loss_weight: 0
+
+# dataset
+imgH: 32
+
+## model_args
+alphabet: "VAT"
+nc: 1
+
+## train_args
+epochs : 300
+train_batch_size : 1
+train_loader_workers: 16
+log_print_freq : 10
+i_batch_eval_freq: 5000
+
+
+# optimizer
+lr: 0.00005
+beta1: 0.5
+
+# scheculer
+step_size: 3
+gamma: 0.1
+
+## val_args
+val_batch_size : 1

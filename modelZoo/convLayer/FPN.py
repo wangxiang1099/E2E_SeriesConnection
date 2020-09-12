@@ -7,7 +7,6 @@ class FPN(nn.Module):
                  inner_channels=256,bias=False):
 
         super(FPN, self).__init__()
-
         self.backbone = backbone
         self.up5 = nn.Upsample(scale_factor=2, mode='nearest')
         self.up4 = nn.Upsample(scale_factor=2, mode='nearest')
@@ -22,14 +21,17 @@ class FPN(nn.Module):
             nn.Conv2d(inner_channels, inner_channels //
                       4, 3, padding=1, bias=bias),
             nn.Upsample(scale_factor=8, mode='nearest'))
+
         self.out4 = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
                       4, 3, padding=1, bias=bias),
             nn.Upsample(scale_factor=4, mode='nearest'))
+
         self.out3 = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
                       4, 3, padding=1, bias=bias),
             nn.Upsample(scale_factor=2, mode='nearest'))
+
         self.out2 = nn.Conv2d(
             inner_channels, inner_channels//4, 3, padding=1, bias=bias)
         
@@ -54,7 +56,7 @@ class FPN(nn.Module):
     def forward(self, x):
         
         c2, c3, c4, c5 = self.backbone(x)
-        
+
         in5 = self.in5(c5)
         in4 = self.in4(c4)
         in3 = self.in3(c3)
@@ -70,7 +72,6 @@ class FPN(nn.Module):
         p2 = self.out2(out2)
 
         fuse = torch.cat((p5, p4, p3, p2), 1)
-
         return fuse
 
 

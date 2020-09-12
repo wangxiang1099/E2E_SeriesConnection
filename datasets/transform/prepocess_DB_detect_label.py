@@ -132,7 +132,7 @@ class MakeSegDetectorData(object):
 
     def __call__(self, image, targets, vis=False):
         
-        quad_boxes = targets['boxes']
+        quad_boxes = targets['quad_boxes']
         image_vis = image.copy()
         h, w = image.shape[0:2]
         gt = np.zeros((h, w, 1), dtype=np.float32)
@@ -167,15 +167,13 @@ class MakeSegDetectorData(object):
             cv2.imwrite("/home/wx/tmp_pic/detect_gt_border.jpg", canvas*255)
             cv2.imwrite("/home/wx/tmp_pic/detect_border_mask.jpg", mask*255)
 
-        target = {}
 
-        target.update(image_vis=image.copy(),
-                      boxes=targets['boxes'],
-                      detect_gt=torch.FloatTensor(gt).permute(2,0,1),
-                      detect_gt_border=torch.FloatTensor(canvas).unsqueeze(0), 
-                      detect_border_mask=torch.FloatTensor(mask).unsqueeze(0))
+        targets.update(image_vis=image.copy(),
+                       detect_gt=torch.FloatTensor(gt).permute(2,0,1),
+                       detect_gt_border=torch.FloatTensor(canvas).unsqueeze(0), 
+                       detect_border_mask=torch.FloatTensor(mask).unsqueeze(0))
                       
-        return image, target
+        return image, targets
 
 
 def prepocess_detect_label():
