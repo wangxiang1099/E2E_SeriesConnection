@@ -118,8 +118,8 @@ def dataloader_init(cfg):
     torch.manual_seed(1)
  
     indices = torch.randperm(len(dataset)).tolist()
-    datasetTrain = torch.utils.data.Subset(dataset, indices[:-500])
-    datasetVal = torch.utils.data.Subset(dataset, indices[-500:])
+    datasetTrain = torch.utils.data.Subset(dataset, indices[:-1000])
+    datasetVal = torch.utils.data.Subset(dataset, indices[-1000:])
 
     assert datasetTrain[0]
     assert datasetVal[0]
@@ -206,14 +206,13 @@ def eval_rec_block():
     pass
 
 
-def eval_model(model, dataloader, device, max_cnt=20, vis_batch= 5):
+def eval_model(model, dataloader, device, max_cnt=100, vis_batch= 5):
     
     # detect_model_load
     # 评估模型， 最大计数为 max_cnt == 1000 实际上由于batch原因会超过这个数字
     model.eval()
 
     max_batch  = 1000
-    batch_size = 1
 
     n_correct = 0
     item_cnt = 0

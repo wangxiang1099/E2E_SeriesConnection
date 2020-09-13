@@ -55,27 +55,28 @@ class SimpleROI(nn.Module):
 
             res_images.append(final_arr.squeeze(0))
 
-
         return torch.stack(res_images), torch.stack(masks)
 
     def forward(self, x_batch, boxes_batch):
 
         shrink_ratio = self.shrink_ratio
-        rec_x = []
-        batch_sizes = []
-      #  print(x_batch.shape)
-        for i, boxes in enumerate(boxes_batch):
 
+        rec_x_batch = []
+
+        for i, boxes in enumerate(boxes_batch):
+            
+            rec_x = [] 
             x = x_batch[i]
+
             for box in boxes:
                 rec_x += [x[:,int(box[1]*shrink_ratio):int(box[3]*shrink_ratio), 
                               int(box[0]*shrink_ratio):int(box[2]*shrink_ratio)]
                           ]
 
-            batch_sizes.append(len(boxes))
+            rec_x, masks = self.resize_images(rec_x)
+            rec_x_batch.append(rec_x)
 
-        rec_x, masks = self.resize_images(rec_x)
-        return rec_x, batch_sizes
+        return rec_x_batch
 
     def vis(self, new_img_torch, id_name):
         img = new_img_torch.numpy().transpose(1,2,0)*255

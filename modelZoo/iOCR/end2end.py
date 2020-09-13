@@ -27,7 +27,9 @@ class End2EndOcr(nn.Module):
         self.share_conv = FPN(resnet50())
         self.detect_branch = DBSegDetector()
 
-        self.roi = SimpleROI(shrink_ratio=0.25, out_height=32, max_ratio=16, channels=256)
+        self.connectorLayer = SimpleROI(shrink_ratio=0.25, out_height=32, max_ratio=12, channels=256)
+        self.expandLayer = lambda x1, x2: x1
+        
         self.recog_branch = CRNN(imgH=8, nc=256, nclass = nclass)
         
         self.run_detect = True
@@ -35,7 +37,7 @@ class End2EndOcr(nn.Module):
 
         # 端到端还是检测识别分支分离
         self.end2end = end2end
-        self._inference_using_bounding_box = False
+        self._inference_using_bounding_box = True
         self.recog_loss_fn =  torch.nn.CTCLoss(reduction='sum')
         self.detect_loss_fn = DetectLoss()
 
@@ -50,7 +52,6 @@ class End2EndOcr(nn.Module):
         
         self.run_detect = False
         self.run_rec = True
-
 
     def detect_loss(self, detect_res, targets): 
 
@@ -104,6 +105,19 @@ class End2EndOcr(nn.Module):
 
         return detect_res
 
+    def _squeeze_batches(self, list_batches):
+        
+        # 这个要写
+        res = []
+        batch_sizes = []
+
+        for i, batch in enumerate(list_batches):
+            
+            res += batch
+            batch_sizes.append(len(batch))
+
+        return torch.stack(res), batch_sizes
+
     # 送出的batches 要恢复原状
     def _unsqueeze_batches(self, list_batches, batch_sizes):
         
@@ -148,7 +162,7 @@ class End2EndOcr(nn.Module):
         text_preds = self.strLabelConverter.decode(preds.data, preds_size.data, raw=False)
         return text_preds
 
-    def forward(self, x_batch, detect_target=None, boxes_batch=None, rec_target=None):
+    def forward(self, x_batch, detect_target=None, boxes_batch=None, rec_target=None, other_batch= None):
         
         detect_res, detect_loss = self.forward_detect(x_batch, detect_target)
 
@@ -160,8 +174,10 @@ class End2EndOcr(nn.Module):
             x_batch = detect_res['conv_maps']
         
         # 把 conv_layer 或 原图 进行roi 裁剪 得到一个batch 送给识别
-        rec_x, batch_sizes = self.roi(x_batch, boxes_batch)
+        rec_x_batch  = self.connectorLayer(x_batch, boxes_batch)
+        rec_x_batch  = self.expandLayer(rec_x_batch, other_batch)
 
+        rec_x, batch_sizes = self._squeeze_batches(rec_x_batch)
         recog_res, rec_loss = self.forward_rec(rec_x, rec_target)
         
         if not self.training:

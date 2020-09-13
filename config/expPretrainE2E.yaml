@@ -9,7 +9,7 @@ result_dir: "/home/wx/dump_results/iocr_training"
 dataset_root: '/home/wx/data/iocr_training/syn6000invoice'
 # 
 device: 0
-expeiment_name: "expPretrainE2E"
+expeiment_name: "expPretrainE2E_test2"
 
 # loss
 detect_loss_weight: 1
@@ -22,7 +22,7 @@ imgH: 32
 alphabet: "VAT"
 nc: 1
 
-## train_args
+## train_argsnv
 epochs : 300
 train_batch_size : 1
 train_loader_workers: 16
